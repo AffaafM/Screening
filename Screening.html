@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OT Screening Form</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #fef6e4;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #dff0d8;
+    }
+
+    h2, h3 {
+      color: #5d7082;
+    }
+
+    .submit-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+
+    .category-header {
+      background-color: #b9d7ea;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .text-input {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .num-input {
+      display: flex;
+      align-items: right;
+      gap: 10px;
+    }
+
+    @media print {
+      input[type="radio"] {
+        visibility: hidden;
+        position: relative;
+      }
+
+      input[type="radio"]:checked::before {
+        content: "●";
+        font-size: 18px;
+        color: black;
+        position: absolute;
+        left: 0;
+        top: 0;
+        transform: translate(5px, -2px);
+      }
+
+      label, th, td {
+        color: black !important;
+      }
+
+      .submit-btn, .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>OT Screening Checklist (3–6 years)</h2>
+  <p>
+    This web-based tool provides a structured <strong>Occupational Therapy (OT) screening checklist</strong> designed for children ages 3 to 6.
+    It allows educators, caregivers, or specialists to assess key developmental domains using a 4-point rating scale:<br>
+    <strong>0 = Never</strong>, <strong>1 = Sometimes</strong>, <strong>2 = Often</strong>, <strong>3 = Almost Always</strong>
+  </p>
+
+  <div class="text-input">
+    <label>Child's name: </label>
+    <input type="text" id="childID" name="childName" placeholder="Child's Name" required>
+  </div>
+  <div class="num-input">
+    <label>Child's Age:</label>
+    <input type="number" id="childAgeID" name="childAge" min="3" max="6" placeholder="Child's Current Age" required>
+  </div>
+  <div class="text-input">
+    <label>Child's Gender:</label>
+    <label>
+      <input type="radio" name="gender" value="female"> Female
+    </label>
+    <label>
+      <input type="radio" name="gender" value="male"> Male
+    </label>
+  </div>
+
+  <div id="printable-area">
+    <form id="otForm">
+      <table id="formTable"></table>
+      <div id="category-totals-section" style="margin-top: 30px;">
+        <h3>Category Totals</h3>
+        <table id="category-totals-table" border="1">
+          <thead>
+            <tr><th>Category</th><th>Total Score</th></tr>
+          </thead>
+          <tbody id="category-totals-body"></tbody>
+        </table>
+      </div>
+      <button type="submit" class="submit-btn">Submit</button>
+      <button type="button" class="submit-btn" onclick="resetForm()">Reset</button>    
+      <button type="button" class="submit-btn" onclick="printAssessment()">Print Assessment</button>
+      <div id="recommendation" style="margin-top:30px;"></div>
+    </form>
+  </div>
+
+  <script>
+    const csvFile = "ScreeningChecklistFlagged.csv";
+    const table = document.getElementById("formTable");
+
+    window.addEventListener("DOMContentLoaded", () => {
+      fetch(csvFile)
+        .then(res => res.text())
+        .then(text => generateFormFromCSV(text))
+        .catch(err => {
+          console.error("Failed to load CSV:", err);
+          alert("Could not load the OT screening form.");
+        });
+    });
+      
+    
+
+    function generateFormFromCSV(csvText) {
+      const lines = csvText.split("\n");
+      const trimmedLines = lines.map(line => line.trim()).filter(line => line !== "");
+      table.innerHTML = "";
+
+      const heading = document.createElement("tr");
+      heading.innerHTML = "<th>Question</th><th>0</th><th>1</th><th>2</th><th>3</th>";
+      table.appendChild(heading);
+
+      let currentCategory = "";
+      const categoriesSet = new Set();
+      window.flagRules = {};
+
+      for (const row of trimmedLines) {
+        const [category, question, flagIf, flagAge, expectAgeFlag] = row.split(";");
+
+        if (category !== currentCategory) {
+          const catRow = document.createElement("tr");
+          catRow.innerHTML = `<td colspan="5" class="category-header"><strong>${category}</strong></td>`;
+          table.appendChild(catRow);
+          currentCategory = category;
+          categoriesSet.add(category);
+        }
+
+        const key = `${category}:${question}`;
+        flagRules[key] = {
+          flagIf: flagIf.trim().toLowerCase(),
+          flagAge: parseInt(flagAge.trim()),
+          expectAgeFlag: parseInt(expectAgeFlag.trim())
+        };
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${question}</td>
+          <td><input type="radio" name="${key}" value="0"></td>
+          <td><input type="radio" name="${key}" value="1"></td>
+          <td><input type="radio" name="${key}" value="2"></td>
+          <td><input type="radio" name="${key}" value="3"></td>
+        `;
+        table.appendChild(tr);
+      }
+
+      const tfoot = document.createElement("tfoot");
+      tfoot.innerHTML = `
+        <tr>
+          <td style="font-weight:bold;">Total</td>
+          <td id="total-0">0</td>
+          <td id="total-1">0</td>
+          <td id="total-2">0</td>
+          <td id="total-3">0</td>
+        </tr>`;
+      table.appendChild(tfoot);
+      table.addEventListener("change", updateTotals);
+
+      const catBody = document.getElementById("category-totals-body");
+      categoriesSet.forEach(category => {
+        const row = document.createElement("tr");
+        const safeId = category.replace(/\s+/g, '-');
+        row.innerHTML = `<td>${category}</td><td id="cat-total-${safeId}">0</td>`;
+        catBody.appendChild(row);
+      });
+    }
+
+      
+      
+      
+    document.getElementById("otForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById("childID").value.trim();
+      const ageInput = document.getElementById("childAgeID").value;
+      const childAge = parseInt(ageInput);
+      if (!name || !ageInput) {
+        alert("Please enter both the child's name and age before submitting.");
+        return;
+      }
+
+      const formData = new FormData(e.target);
+      const values = {}, categoryScores = {}, categoryThrees = {}, flagged = new Set();
+
+      for (const [key, val] of formData.entries()) {
+        const [category, question] = key.split(":");
+        const intVal = parseInt(val);
+        values[key] = intVal;
+
+        if (!categoryScores[category]) categoryScores[category] = 0;
+        categoryScores[category] += intVal;
+
+        if (intVal === 3) {
+          if (!categoryThrees[category]) categoryThrees[category] = 0;
+          categoryThrees[category]++;
+        }
+          
+        // Update category totals
+          for (const cat in categoryScores) {
+            const id = `cat-total-${cat.replace(/\s+/g, '-')}`;
+            document.getElementById(id).textContent = categoryScores[cat];
+            if (categoryThrees[cat] >= 3 || categoryScores[cat] >= 9) {
+              flagged.add(cat);
+            }
+          }  
+
+        const rule = flagRules[key];
+        if (rule && childAge >= rule.flagAge && childAge >= rule.expectAgeFlag) {
+          const isTooLow = rule.flagIf === "low" && intVal <= 1;
+          const isTooHigh = rule.flagIf === "high" && intVal >= 2;
+          const shouldFlag = isTooLow || isTooHigh;
+
+          if (shouldFlag) {
+            flagged.add(category);
+          }
+        }
+
+      }
+
+      let message = "<ul>";
+      for (const category in categoryScores) {
+        const score = categoryScores[category];
+        const threes = categoryThrees[category] || 0;
+        const isFlagged = flagged.has(category);
+        message += `<li><strong>${category}:</strong> Total = ${score}, 3s = ${threes} ${isFlagged ? "⚠️ <em>(Flagged)</em>" : ""}</li>`;
+      }
+      message += "</ul>";
+
+      if (flagged.size >= 2) {
+        message += `<p style="color: red;"><strong>Recommendation:</strong> Based on the results and the child's age, the child may benefit from an Occupational Therapy (OT) evaluation. Please consult a specialist.</p>`;
+      } else if (flagged.size === 1) {
+        const [onlyCategory] = flagged;
+        message += `<p style="color: orange;"><strong>Observation Needed:</strong> Some behaviors might not align with age expectations in <strong>${onlyCategory}</strong>. Monitor closely.</p>`;
+      } else {
+        message += `<p style="color: green;"><strong>No Immediate Concerns:</strong> The child’s development appears typical based on age-appropriate behavior responses.</p>`;
+      }
+
+      document.getElementById("recommendation").innerHTML = message;
+    });
+
+    function updateTotals() {
+      const totals = { 0: 0, 1: 0, 2: 0, 3: 0 };
+      const checkedInputs = document.querySelectorAll("input[type='radio']:checked");
+
+      checkedInputs.forEach(input => {
+        const val = input.value;
+        if (totals.hasOwnProperty(val)) {
+          totals[val]++;
+        }
+      });
+
+      for (let i = 0; i <= 3; i++) {
+        const cell = document.getElementById(`total-${i}`);
+        if (cell) cell.textContent = totals[i];
+      }
+    }
+      
+    function printAssessment() {
+      const printContents = document.getElementById("printable-area").innerHTML;
+      const printWindow = window.open('', '', 'height=800,width=1000');
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>OT Assessment Print</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ccc; padding: 10px; }
+            th { background-color: #eee; }
+            input[type="radio"]:checked::after { content: "●"; }
+          </style>
+        </head>
+        <body>
+          ${printContents}
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    }
+      
+    function resetForm() {
+      document.getElementById("otForm").reset();
+      document.getElementById("recommendation").innerHTML = "";
+      document.getElementById("childID").value = "";
+        document.getElementById("childAgeID").value = "";
+    document.querySelectorAll('input[name="gender"]').forEach(el => el.checked = false);
+      updateTotals();
+      document.querySelectorAll('[id^="cat-total-"]').forEach(cell => cell.textContent = "0");
+    }    
+  </script>
+</body>
+</html>

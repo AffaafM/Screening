@@ -1,0 +1,40 @@
+Category;Behavior;FlagIf;FlagAge;ExpectAgeFlag
+Fine Motor;Has difficulty using scissors;high;4;yes
+Fine Motor;Avoids or struggles with writing/drawing tasks;high;5;yes
+Fine Motor;Struggles to button, zip, or fasten clothing;high;4;yes
+Fine Motor;Uses awkward grasp when holding crayons/pencils;high;4;yes
+Sensory Processing;Overreacts to touch, sound, or movement;high;3;yes
+Sensory Processing;Seeks excessive movement (e.g., spinning, crashing);high;3;no
+Sensory Processing;Has difficulty with changes in routine;high;4;no
+Sensory Processing;Avoids messy play or certain textures;high;4;no
+Self-Care;Has difficulty dressing independently;high;4;yes
+Self-Care;Needs help using utensils (fork, spoon) appropriately;high;3;yes
+Self-Care;Is not toilet trained past age 4;high;5;yes
+Self-Care;Does not wash hands independently;high;4;yes
+Visual Perception;Has difficulty copying shapes or simple drawings;high;5;yes
+Visual Perception;Struggles to complete puzzles;high;4;no
+Visual Perception;Loses place frequently while looking at books;high;4;no
+Visual Perception;Trouble identifying letters or shapes visually;high;5;yes
+Social-Emotional;Avoids eye contact;high;3;yes
+Social-Emotional;Struggles to make or keep friends;high;4;no
+Social-Emotional;Displays aggressive behavior;high;3;yes
+Social-Emotional;Disturbs others;high;3;yes
+Social-Emotional;Difficulty following simple directions;high;4;yes
+Social-Emotional;Does not respond to name being called;high;3;yes
+Social-Emotional;Has frequent meltdowns or emotional outbursts;high;4;yes
+Social-Emotional;Appears withdrawn or excessively shy;high;4;no
+Attention & Behavior;Short attention span for age;high;4;yes
+Attention & Behavior;Frequently distracted during tasks;high;4;yes
+Attention & Behavior;Impulsive (acts without thinking);high;3;no
+Attention & Behavior;Does not complete tasks;high;4;no
+Motor Planning;Has trouble learning new physical tasks;high;4;yes
+Motor Planning;Avoids climbing, jumping or playground activities;high;4;yes
+Motor Planning;Seems clumsy or uncoordinated;high;4;yes
+Motor Planning;Takes longer to learn new motor skills;high;4;yes
+Oral Motor;Mouths or chews on non-food objects;high;3;yes
+Oral Motor;Avoids certain food textures;high;4;no
+Oral Motor;Drools past age 3;high;4;yes
+Oral Motor;Difficulty pronouncing common words;high;4;yes
+Transitions;Resists changes to activities or routines;high;4;no
+Transitions;Takes a long time to transition between tasks;high;4;no
+Transitions;Becomes upset with unexpected changes;high;4;yes
